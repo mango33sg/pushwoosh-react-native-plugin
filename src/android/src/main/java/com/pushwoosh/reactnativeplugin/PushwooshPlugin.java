@@ -333,7 +333,10 @@ public class PushwooshPlugin extends ReactContextBaseJavaModule implements Lifec
 				if (sInitialized && INSTANCE != null) {
 					INSTANCE.sendEvent(PUSH_OPEN_JS_EVENT, ConversionUtil.stringToJSONObject(pushData));
 				} else {
-					Log.e(TAG, "Push open lost to ReactNative");
+					String message = "Push open lost to ReactNative, reasons";
+					message += ": sInitialized = " + String.valueOf(sInitialized);
+					message += ": INSTANCE = " + String.valueOf(INSTANCE);
+					Log.e(TAG, message);
 				}
 			}
 		} catch (Exception e) {
