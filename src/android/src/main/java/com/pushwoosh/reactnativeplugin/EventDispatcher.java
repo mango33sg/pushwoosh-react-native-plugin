@@ -44,9 +44,4 @@ public class EventDispatcher {
             list.clear();
         }
     }
-
-    public void sendJSEvent(ReactContext reactContext, String event, WritableMap params) {
-        reactContext.getJSModule(DeviceEventManagerModule.RCTDeviceEventEmitter.class)
-                .emit(event, params);
-    }
 }

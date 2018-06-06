@@ -11,6 +11,7 @@ import com.facebook.react.bridge.ReactMethod;
 import com.facebook.react.bridge.ReadableMap;
 import com.facebook.react.bridge.WritableMap;
 import com.facebook.react.bridge.Arguments;
+import com.facebook.react.modules.core.DeviceEventManagerModule;
 
 import com.pushwoosh.Pushwoosh;
 import com.pushwoosh.badge.PushwooshBadge;
@@ -346,7 +347,8 @@ public class PushwooshPlugin extends ReactContextBaseJavaModule implements Lifec
 	}
 
 	private void sendEvent(String event, JSONObject params) {
-		mEventDispatcher.sendJSEvent(getReactApplicationContext(), event, ConversionUtil.toWritableMap(params));
+		getReactApplicationContext().getJSModule(DeviceEventManagerModule.RCTDeviceEventEmitter.class)
+			.emit(event, ConversionUtil.toWritableMap(params));
 	}
 
 	static void messageReceived(String pushData) {
