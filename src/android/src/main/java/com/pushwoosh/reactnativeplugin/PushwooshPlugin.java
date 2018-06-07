@@ -272,8 +272,9 @@ public class PushwooshPlugin extends ReactContextBaseJavaModule implements Lifec
 				if (success != null) {
 					map.putMap("opened", ConversionUtil.toWritableMap(ConversionUtil.stringToJSONObject(sStartPushData)));
 					hasData = true;
+				} else {
+					sendEvent(PUSH_OPEN_JS_EVENT, ConversionUtil.stringToJSONObject(sStartPushData));
 				}
-				sendEvent(PUSH_OPEN_JS_EVENT, ConversionUtil.stringToJSONObject(sStartPushData));
 				sStartPushData = null;
 			}
 
@@ -282,8 +283,9 @@ public class PushwooshPlugin extends ReactContextBaseJavaModule implements Lifec
 				if (success != null) {
 					map.putMap("received", ConversionUtil.toWritableMap(ConversionUtil.stringToJSONObject(sReceivedPushData)));
 					hasData = true;
+				} else {
+					sendEvent(PUSH_RECEIVED_JS_EVENT, ConversionUtil.stringToJSONObject(sReceivedPushData));
 				}
-				sendEvent(PUSH_RECEIVED_JS_EVENT, ConversionUtil.stringToJSONObject(sReceivedPushData));
 				sReceivedPushData = null;
 			}
 
