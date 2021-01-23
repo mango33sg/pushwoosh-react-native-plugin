@@ -43,46 +43,48 @@ RCT_EXPORT_MODULE();
 
 RCT_EXPORT_METHOD(init:(NSDictionary*)config success:(RCTResponseSenderBlock)success error:(RCTResponseSenderBlock)error) {
 	NSString *appCode = config[@"pw_appid"];
-	
+
 	if (!appCode || ![appCode isKindOfClass:[NSString class]]) {
 		if (error) {
 			error(@[ @"pw_appid is missing" ]);
 		}
-		
+
 		return;
 	}
-	
+
 	[PushNotificationManager initializeWithAppCode:appCode appName:nil];
 	[[PushNotificationManager pushManager] sendAppOpen];
 	[PushNotificationManager pushManager].delegate = self;
 	[UNUserNotificationCenter currentNotificationCenter].delegate = [PushNotificationManager pushManager].notificationCenterDelegate;
-	
+
     if (success) {
         success(@[]);
     }
-    
+
+    /*
 	if (gStartPushData) {
         NSString *link = gStartPushData[@"l"];
-        
+
         //get deeplink from the payload and write it to the launchOptions for proper RCTLinking behavior
         if (link) {
             NSMutableDictionary *launchOptions = self.bridge.launchOptions.mutableCopy;
             launchOptions[UIApplicationLaunchOptionsURLKey] = [NSURL URLWithString:link];
             [self.bridge setValue:launchOptions forKey:@"launchOptions"];
         }
-        
+
         [self sendJSEvent:kPushReceivedJSEvent withArgs:gStartPushData];
 		[self sendJSEvent:kPushOpenJSEvent withArgs:gStartPushData];
     } else if([PushNotificationManager pushManager].launchNotification) {
         [self sendJSEvent:kPushReceivedJSEvent withArgs:[PushNotificationManager pushManager].launchNotification];
         [self sendJSEvent:kPushOpenJSEvent withArgs:[PushNotificationManager pushManager].launchNotification];
     }
+     */
 }
 
 RCT_EXPORT_METHOD(register:(RCTResponseSenderBlock)success error:(RCTResponseSenderBlock)error) {
 	[[PWEventDispatcher sharedDispatcher] subscribe:success toEvent:kRegistrationSuccesEvent];
 	[[PWEventDispatcher sharedDispatcher] subscribe:error toEvent:kRegistrationErrorEvent];
-	
+
 	[[PushNotificationManager pushManager] registerForPushNotifications];
 }
 
@@ -91,7 +93,7 @@ RCT_EXPORT_METHOD(unregister:(RCTResponseSenderBlock)successCallback error:(RCTR
         if (!error && successCallback) {
             successCallback(@[]);
         }
-        
+
         if (error && errorCallback) {
             errorCallback(@[ objectOrNull([error localizedDescription]) ]);
         }
@@ -100,7 +102,7 @@ RCT_EXPORT_METHOD(unregister:(RCTResponseSenderBlock)successCallback error:(RCTR
 
 RCT_EXPORT_METHOD(onPushOpen:(RCTResponseSenderBlock)callback) {
 	[[PWEventDispatcher sharedDispatcher] subscribe:callback toEvent:kPushOpenEvent];
-	
+
 	if (gStartPushData) {
 		NSDictionary *pushData = gStartPushData;
 		gStartPushData = nil;
@@ -110,11 +112,23 @@ RCT_EXPORT_METHOD(onPushOpen:(RCTResponseSenderBlock)callback) {
 
 RCT_EXPORT_METHOD(onPushReceived:(RCTResponseSenderBlock)callback) {
     [[PWEventDispatcher sharedDispatcher] subscribe:callback toEvent:kPushReceivedEvent];
-    
+
     if (gStartPushData) {
         NSDictionary *pushData = gStartPushData;
         gStartPushData = nil;
         [[PWEventDispatcher sharedDispatcher] dispatchEvent:kPushReceivedEvent withArgs:@[ objectOrNull(pushData) ]];
+    }
+}
+
+RCT_EXPORT_METHOD(pump:(RCTResponseSenderBlock)callback) {
+    if (gStartPushData) {
+        NSDictionary *pushData = gStartPushData;
+        if (callback) {
+            callback(@[ @{ @"opened": objectOrNull( pushData ) } ]);
+        } else {
+            [self sendJSEvent:kPushOpenJSEvent withArgs:pushData];
+        }
+        gStartPushData = nil;
     }
 }
 
@@ -135,7 +149,7 @@ RCT_EXPORT_METHOD(setTags:(NSDictionary*)tags success:(RCTResponseSenderBlock)su
 		if (!error && successCallback) {
 			successCallback(@[]);
 		}
-		
+
 		if (error && errorCallback) {
 			errorCallback(@[ objectOrNull([error localizedDescription]) ]);
 		}
@@ -195,7 +209,7 @@ RCT_EXPORT_METHOD(addToApplicationIconBadgeNumber:(nonnull NSNumber*)badgeNumber
         [UIApplication sharedApplication].applicationIconBadgeNumber += [badgeNumber integerValue];
     });
 }
-    
+
 RCT_EXPORT_METHOD(presentInboxUI:(NSDictionary *)styleDictionary) {
     NSString *resourceBundlePath = [[NSBundle mainBundle] pathForResource:@"PushwooshInboxBundle" ofType:@"bundle"];
     if (![NSBundle bundleWithPath:resourceBundlePath]) {
@@ -205,7 +219,7 @@ RCT_EXPORT_METHOD(presentInboxUI:(NSDictionary *)styleDictionary) {
             PWIInboxViewController *inboxViewController = [PWIInboxUI createInboxControllerWithStyle:[self inboxStyleForDictionary:styleDictionary]];
             inboxViewController.navigationItem.leftBarButtonItem = [[UIBarButtonItem alloc] initWithTitle:NSLocalizedString(@"Close", @"Close") style:UIBarButtonItemStylePlain target:self action:@selector(closeInbox)];
             [[Pushwoosh findRootViewController] presentViewController:[[UINavigationController alloc] initWithRootViewController:inboxViewController] animated:YES completion:nil];
-            
+
             __weak typeof (self) wself = self;
             inboxViewController.onMessageClickBlock = ^(NSObject<PWInboxMessageProtocol> *message) {
                 if (message.type == PWInboxMessageTypeDeeplink) {
@@ -218,15 +232,15 @@ RCT_EXPORT_METHOD(presentInboxUI:(NSDictionary *)styleDictionary) {
 
 - (PWIInboxStyle *)inboxStyleForDictionary:(NSDictionary *)styleDictionary {
     PWIInboxStyle *style = [PWIInboxStyle defaultStyle];
-    
+
     NSDictionary *defaultImageDict = styleDictionary[@"defaultImageIcon"];
-    
+
     if (defaultImageDict) {
         style.defaultImageIcon = [RCTConvert UIImage:defaultImageDict];
     }
-    
+
     NSString *dateFormat = styleDictionary[@"dateFormat"];
-    
+
     if (dateFormat) {
         style.dateFormatterBlock = ^NSString *(NSDate *date, NSObject *owner) {
             NSDateFormatter *formatter = [NSDateFormatter new];
@@ -234,107 +248,107 @@ RCT_EXPORT_METHOD(presentInboxUI:(NSDictionary *)styleDictionary) {
             return [formatter stringFromDate:date];
         };
     }
-    
+
     NSDictionary *listErrorImageDict = styleDictionary[@"listErrorImage"];
-    
+
     if (listErrorImageDict) {
         style.listErrorImage = [RCTConvert UIImage:listErrorImageDict];
     }
-    
+
     NSDictionary *listEmptyImageDict = styleDictionary[@"listEmptyImage"];
-    
+
     if (listEmptyImageDict) {
         style.listEmptyImage = [RCTConvert UIImage:listEmptyImageDict];
     }
-    
+
     NSDictionary *unreadImageDict = styleDictionary[@"unreadImage"];
-    
+
     if (unreadImageDict) {
         style.unreadImage = [RCTConvert UIImage:unreadImageDict];
     }
-    
+
     NSString *listErrorMessage = styleDictionary[@"listErrorMessage"];
-    
+
     if (listErrorMessage) {
         style.listErrorMessage = listErrorMessage;
     }
-    
+
     NSString *listEmptyMessage = styleDictionary[@"listEmptyMessage"];
-    
+
     if (listEmptyMessage) {
         style.listEmptyMessage = listEmptyMessage;
     }
-    
+
     NSNumber *accentColorValue = styleDictionary[@"accentColor"];
-    
+
     if (accentColorValue) {
         style.accentColor = [RCTConvert UIColor:accentColorValue];
     }
-    
+
     NSNumber *defaultTextColorValue = styleDictionary[@"defaultTextColor"];
-    
+
     if (defaultTextColorValue) {
         style.defaultTextColor = [RCTConvert UIColor:defaultTextColorValue];
     }
-    
+
     NSNumber *backgroundColorValue = styleDictionary[@"backgroundColor"];
-    
+
     if (backgroundColorValue) {
         style.backgroundColor = [RCTConvert UIColor:backgroundColorValue];
     }
-    
+
     if (accentColorValue) {
         style.accentColor = [RCTConvert UIColor:accentColorValue];
     }
-    
+
     NSNumber *highlightColorValue = styleDictionary[@"highlightColor"];
-    
+
     if (highlightColorValue) {
         style.selectionColor = [RCTConvert UIColor:highlightColorValue];
     }
-    
+
     NSNumber *titleColorValue = styleDictionary[@"titleColor"];
-    
+
     if (titleColorValue) {
         style.titleColor = [RCTConvert UIColor:titleColorValue];
     }
-    
+
     NSNumber *descriptionColorValue = styleDictionary[@"descriptionColor"];
-    
+
     if (descriptionColorValue) {
         style.descriptionColor = [RCTConvert UIColor:descriptionColorValue];
     }
-    
+
     NSNumber *dateColorValue = styleDictionary[@"dateColor"];
-    
+
     if (dateColorValue) {
         style.dateColor = [RCTConvert UIColor:dateColorValue];
     }
-    
+
     NSNumber *dividerColorValue = styleDictionary[@"dividerColor"];
-    
+
     if (dividerColorValue) {
         style.separatorColor = [RCTConvert UIColor:dividerColorValue];
     }
-    
+
     NSNumber *barBackgroundColor = styleDictionary[@"barBackgroundColor"];
-    
+
     if (barBackgroundColor) {
         style.barBackgroundColor = [RCTConvert UIColor:barBackgroundColor];
     }
-    
+
     NSNumber *barAccentColor = styleDictionary[@"barAccentColor"];
-    
+
     if (barAccentColor) {
         style.barAccentColor = [RCTConvert UIColor:barAccentColor];
     }
-    
+
     NSNumber *barTextColor = styleDictionary[@"barTextColor"];
-    
+
     if (barTextColor) {
         style.barTextColor = [RCTConvert UIColor:barTextColor];
     }
-    
+
     return style;
 }
 
@@ -348,7 +362,7 @@ RCT_EXPORT_METHOD(presentInboxUI:(NSDictionary *)styleDictionary) {
 + (UIViewController*)findRootViewController {
     UIApplication *sharedApplication = [UIApplication valueForKey:@"sharedApplication"];
     UIViewController *controller = sharedApplication.keyWindow.rootViewController;
-    
+
     while (controller.presentedViewController) {
         controller = controller.presentedViewController;
     }
@@ -423,7 +437,7 @@ RCT_EXPORT_METHOD(createLocalNotification:(NSDictionary *)params){
         UNNotificationRequest *request = [UNNotificationRequest requestWithIdentifier:identifier
                                                                               content:content
                                                                               trigger:trigger];
-        
+
         [center addNotificationRequest:request withCompletionHandler:^(NSError *_Nullable error) {
             if (error != nil) {
                 NSLog(@"Something went wrong: %@", error);
@@ -448,7 +462,7 @@ RCT_EXPORT_METHOD(clearLocalNotification){
         [[UIApplication sharedApplication] cancelAllLocalNotifications];
     }
 }
-    
+
 #pragma mark - PushNotificationDelegate
 
 - (void)onDidRegisterForRemoteNotificationsWithDeviceToken:(NSString *)token {
@@ -461,14 +475,22 @@ RCT_EXPORT_METHOD(clearLocalNotification){
 
 - (void)onPushReceived:(PushNotificationManager *)pushManager withNotification:(NSDictionary *)pushNotification onStart:(BOOL)onStart {
     [[PWEventDispatcher sharedDispatcher] dispatchEvent:kPushReceivedEvent withArgs:@[ objectOrNull(pushNotification) ]];
-    
-    [self sendJSEvent:kPushReceivedJSEvent withArgs:pushNotification];
+
+    // [self sendJSEvent:kPushReceivedJSEvent withArgs:pushNotification];
+
+    if ([[UIApplication sharedApplication] applicationState] != UIApplicationStateBackground) {
+        [self sendJSEvent:kPushReceivedJSEvent withArgs:pushNotification];
+    }
 }
 
 - (void)onPushAccepted:(PushNotificationManager *)manager withNotification:(NSDictionary *)pushNotification onStart:(BOOL)onStart {
 	[[PWEventDispatcher sharedDispatcher] dispatchEvent:kPushOpenEvent withArgs:@[ objectOrNull(pushNotification) ]];
-	
-    [self sendJSEvent:kPushOpenJSEvent withArgs:pushNotification];
+
+    // [self sendJSEvent:kPushOpenJSEvent withArgs:pushNotification];
+
+	if ([[UIApplication sharedApplication] applicationState] != UIApplicationStateBackground) {
+		[self sendJSEvent:kPushOpenJSEvent withArgs:pushNotification];
+	}
 }
 
 #pragma mark - RCTEventEmitter
@@ -497,6 +519,18 @@ RCT_EXPORT_METHOD(clearLocalNotification){
     }
 }
 - (void)onPushAccepted:(PushNotificationManager *)manager withNotification:(NSDictionary *)pushNotification onStart:(BOOL)onStart {
+#if 0
+    dispatch_async(dispatch_get_main_queue(), ^{
+        NSData *jsonData = [NSJSONSerialization dataWithJSONObject:gStartPushData options:0 error:nil];
+        NSString *jsonRequestData = [[NSString alloc] initWithData:jsonData encoding:NSUTF8StringEncoding];
+        UIAlertView *alert = [[UIAlertView alloc] initWithTitle:@"Pushwoosh"
+                                                        message:[NSString stringWithFormat:@"onPushAccepted UIApplication data:%@", jsonRequestData]
+                                                       delegate:nil
+                                              cancelButtonTitle:@"OK"
+                                              otherButtonTitles:nil];
+        [alert show];
+    });
+#endif
 	if (onStart) {
 		gStartPushData = pushNotification;
 	}

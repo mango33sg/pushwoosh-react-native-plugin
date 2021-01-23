@@ -21,9 +21,9 @@
       "sourceDir": "./src/android"
     },
     "ios": {
-      "sharedLibraries" : [ 
-        "libstdc++", 
-        "libz" 
+      "sharedLibraries" : [
+        "libstdc++",
+        "libz"
       ],
       "assets" : [ "./src/ios/PushwooshInboxBundle.bundle" ]
     }

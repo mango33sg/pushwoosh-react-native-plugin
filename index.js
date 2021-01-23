@@ -177,7 +177,7 @@ class PushNotification {
     setShowPushnotificationAlert(showPushnotificationAlert: boolean) {
         PushwooshModule.setShowPushnotificationAlert(showPushnotificationAlert);
     }
-    
+
     //Function: getShowPushnotificationAlert
     //Show push notifications alert when push notification is received while the app is running, default is `true`
     //
@@ -190,7 +190,7 @@ class PushNotification {
     getShowPushnotificationAlert(callback: Function) {
         PushwooshModule.getShowPushnotificationAlert(callback);
     }
-    
+
 	//Function: getPushToken
 	//Call this to get push token if it is available. Note the token also comes in registerDevice function callback.
 	//
@@ -239,7 +239,7 @@ class PushNotification {
 	//Parameters:
 	// "event" - event to trigger
 	// "attributes" - object with additional event attributes
-	// 
+	//
 	// Example:
 	//(start code)
 	// Pushwoosh.setUserId("XXXXXX");
@@ -275,7 +275,7 @@ class PushNotification {
 	getApplicationIconBadgeNumber(callback: Function) {
 		PushwooshModule.getApplicationIconBadgeNumber(callback);
 	}
-	
+
 	//Function: addToApplicationIconBadgeNumber
 	//[android, ios] Adds value to the application icon badge
 	//
@@ -408,7 +408,7 @@ class PushNotification {
 	//
 	//Example:
 	//(start code)
-	//	Pushwoosh.presentInboxUI({ 
+	//	Pushwoosh.presentInboxUI({
 	//   "dateFormat" : "dd.MMMM.YYYY",
 	//   "defaultImageIcon" : Image.resolveAssetSource(require('./icon.png')),
 	//   "listErrorImage" : Image.resolveAssetSource(require('./error.png')),
@@ -451,7 +451,7 @@ class PushNotification {
 		PushwooshModule.isCommunicationEnabled(success);
 	}
 
-	// Return flag is enabled GDPR on server	
+	// Return flag is enabled GDPR on server
 	isAvailableGDPR(success: Function){
 		PushwooshModule.isAvailableGDPR(success);
 	}
@@ -488,6 +488,11 @@ class PushNotification {
 	// Set to null if you want to use device language again.
 	setLanguage(language: string) {
 		PushwooshModule.setLanguage(language);
+	}
+
+	//Function: pump
+	pump(success: Function) {
+		PushwooshModule.pump(success);
 	}
 }
 
