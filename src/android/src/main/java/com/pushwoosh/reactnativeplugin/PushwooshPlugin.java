@@ -30,7 +30,6 @@ import com.pushwoosh.inapp.PushwooshInApp;
 import com.pushwoosh.inbox.ui.presentation.view.activity.InboxActivity;
 import com.pushwoosh.internal.platform.AndroidPlatformModule;
 import com.pushwoosh.internal.utils.PWLog;
-import com.pushwoosh.location.PushwooshLocation;
 import com.pushwoosh.notification.PushwooshNotificationSettings;
 import com.pushwoosh.notification.SoundType;
 import com.pushwoosh.notification.VibrateType;
